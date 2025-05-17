@@ -40,17 +40,36 @@ app.get("/feed", async (req, res) => {
   }
 });
 
-app.patch("/user", async (req, res) => {
-  const userId = req.body.userId;
+app.patch("/user/:userId", async (req, res) => {
+  const userId = req.params.userId;
   const data = req.body;
 
   try {
+    const ALLOWED_UPDATES = [
+      "skills",
+      "about",
+      "firstName",
+      "lastName",
+      "gender",
+      "about",
+    ];
+
+    const isAllowed = Object.keys(data).every((key) =>
+      ALLOWED_UPDATES.includes(key)
+    );
+
+    if (!isAllowed) throw new Error("Update not allowed");
+
+    if (data?.skills?.length > 10)
+      throw new Error("More than 10 skills are not allowed");
+
     const updatedData = await User.findByIdAndUpdate(userId, data, {
       returnDocument: "after",
+      runValidators: true,
     });
     res.send(updatedData);
   } catch (error) {
-    res.status(400).send("Something went wrong");
+    res.status(400).send(error.message);
   }
 });
 
